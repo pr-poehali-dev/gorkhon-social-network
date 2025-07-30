@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -10,8 +10,14 @@ import Icon from '@/components/ui/icon';
 const Index = () => {
   const [activeTab, setActiveTab] = useState('feed');
   const [newPost, setNewPost] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
+  const [authMode, setAuthMode] = useState('login');
+  const [formData, setFormData] = useState({ email: '', password: '', name: '', confirmPassword: '' });
+  const [postsData, setPostsData] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
 
-  const posts = [
+  const initialPosts = [
     {
       id: 1,
       author: 'Анна Петрова',
@@ -20,7 +26,8 @@ const Index = () => {
       content: 'Какая красота в нашем Горхоне сегодня! Солнце светит, птички поют 🌞',
       image: '/img/a34c9c60-b1fd-40fb-9711-2a46ec701434.jpg',
       likes: 24,
-      comments: 8
+      comments: 8,
+      liked: false
     },
     {
       id: 2,
@@ -30,7 +37,8 @@ const Index = () => {
       content: 'Отличный семейный пикник получился! Спасибо всем соседям за компанию!',
       image: '/img/fc06f7ea-92cf-4e5f-8641-5230751df945.jpg',
       likes: 31,
-      comments: 12
+      comments: 12,
+      liked: false
     },
     {
       id: 3,
@@ -40,7 +48,8 @@ const Index = () => {
       content: 'Подготовка к летнему фестивалю идет полным ходом! Приходите все 15 августа!',
       image: '/img/8c9dbc3f-89a6-4fa3-a5b2-bd7fd99a847b.jpg',
       likes: 47,
-      comments: 18
+      comments: 18,
+      liked: false
     }
   ];
 
@@ -49,6 +58,194 @@ const Index = () => {
     { id: 2, name: 'Соседский чат', message: 'Кто идет на собрание?', time: '09:15', unread: 5 },
     { id: 3, name: 'Михаил Сидоров', message: 'Спасибо за фото!', time: 'вчера', unread: 0 }
   ];
+
+  useEffect(() => {
+    setPostsData(initialPosts);
+    // Проверяем, есть ли сохраненная сессия
+    const savedUser = localStorage.getItem('gorkhonUser');
+    if (savedUser) {
+      setCurrentUser(JSON.parse(savedUser));
+      setIsLoggedIn(true);
+    }
+  }, []);
+
+  const handleLike = (postId) => {
+    setPostsData(prev => prev.map(post => 
+      post.id === postId 
+        ? { ...post, likes: post.liked ? post.likes - 1 : post.likes + 1, liked: !post.liked }
+        : post
+    ));
+  };
+
+  const handleAuth = (e) => {
+    e.preventDefault();
+    if (authMode === 'register') {
+      if (formData.password !== formData.confirmPassword) {
+        alert('Пароли не совпадают!');
+        return;
+      }
+      const newUser = { 
+        name: formData.name, 
+        email: formData.email,
+        id: Date.now(),
+        avatar: '/img/a34c9c60-b1fd-40fb-9711-2a46ec701434.jpg'
+      };
+      localStorage.setItem('gorkhonUser', JSON.stringify(newUser));
+      setCurrentUser(newUser);
+      setIsLoggedIn(true);
+      setShowAuth(false);
+      alert('Регистрация успешна!');
+    } else {
+      // Простая авторизация
+      const user = { 
+        name: 'Житель Горхона', 
+        email: formData.email,
+        id: Date.now(),
+        avatar: '/img/a34c9c60-b1fd-40fb-9711-2a46ec701434.jpg'
+      };
+      localStorage.setItem('gorkhonUser', JSON.stringify(user));
+      setCurrentUser(user);
+      setIsLoggedIn(true);
+      setShowAuth(false);
+    }
+    setFormData({ email: '', password: '', name: '', confirmPassword: '' });
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('gorkhonUser');
+    setCurrentUser(null);
+    setIsLoggedIn(false);
+  };
+
+  const handleCreatePost = () => {
+    if (!newPost.trim()) return;
+    const post = {
+      id: Date.now(),
+      author: currentUser?.name || 'Неизвестный',
+      avatar: currentUser?.avatar || '/img/a34c9c60-b1fd-40fb-9711-2a46ec701434.jpg',
+      time: 'только что',
+      content: newPost,
+      image: '/img/a34c9c60-b1fd-40fb-9711-2a46ec701434.jpg',
+      likes: 0,
+      comments: 0,
+      liked: false
+    };
+    setPostsData(prev => [post, ...prev]);
+    setNewPost('');
+  };
+
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-coral via-turquoise to-lavender flex items-center justify-center p-4">
+        <Card className="w-full max-w-md bg-white/90 backdrop-blur-sm shadow-xl">
+          <CardHeader className="text-center">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-coral to-turquoise bg-clip-text text-transparent mb-2">
+              ГорхонNet
+            </h1>
+            <p className="text-muted-foreground">Социальная сеть поселка Горхон</p>
+          </CardHeader>
+          <CardContent>
+            {!showAuth ? (
+              <div className="space-y-4">
+                <Button 
+                  onClick={() => { setShowAuth(true); setAuthMode('login'); }}
+                  className="w-full bg-gradient-to-r from-coral to-turquoise text-white"
+                >
+                  Войти
+                </Button>
+                <Button 
+                  onClick={() => { setShowAuth(true); setAuthMode('register'); }}
+                  variant="outline" 
+                  className="w-full"
+                >
+                  Регистрация
+                </Button>
+              </div>
+            ) : (
+              <form onSubmit={handleAuth} className="space-y-4">
+                <div className="text-center mb-4">
+                  <h3 className="text-xl font-semibold">
+                    {authMode === 'login' ? 'Вход' : 'Регистрация'}
+                  </h3>
+                </div>
+                
+                {authMode === 'register' && (
+                  <div>
+                    <label className="text-sm font-medium">Имя</label>
+                    <Input
+                      type="text"
+                      placeholder="Введите ваше имя"
+                      value={formData.name}
+                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                      required
+                    />
+                  </div>
+                )}
+                
+                <div>
+                  <label className="text-sm font-medium">Email</label>
+                  <Input
+                    type="email"
+                    placeholder="Введите email"
+                    value={formData.email}
+                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium">Пароль</label>
+                  <Input
+                    type="password"
+                    placeholder="Введите пароль"
+                    value={formData.password}
+                    onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                    required
+                  />
+                </div>
+                
+                {authMode === 'register' && (
+                  <div>
+                    <label className="text-sm font-medium">Подтвердите пароль</label>
+                    <Input
+                      type="password"
+                      placeholder="Повторите пароль"
+                      value={formData.confirmPassword}
+                      onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                      required
+                    />
+                  </div>
+                )}
+                
+                <div className="flex space-x-2">
+                  <Button type="submit" className="flex-1 bg-gradient-to-r from-coral to-turquoise text-white">
+                    {authMode === 'login' ? 'Войти' : 'Зарегистрироваться'}
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setShowAuth(false)}
+                  >
+                    Отмена
+                  </Button>
+                </div>
+                
+                <div className="text-center">
+                  <Button 
+                    type="button"
+                    variant="link" 
+                    onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
+                  >
+                    {authMode === 'login' ? 'Нет аккаунта? Регистрация' : 'Есть аккаунт? Войти'}
+                  </Button>
+                </div>
+              </form>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-coral via-turquoise to-lavender">
@@ -68,10 +265,15 @@ const Index = () => {
               <Button variant="ghost" size="sm">
                 <Icon name="Bell" size={20} />
               </Button>
-              <Avatar>
-                <AvatarImage src="/img/a34c9c60-b1fd-40fb-9711-2a46ec701434.jpg" />
-                <AvatarFallback>ВЫ</AvatarFallback>
-              </Avatar>
+              <div className="flex items-center space-x-2">
+                <Avatar>
+                  <AvatarImage src={currentUser?.avatar} />
+                  <AvatarFallback>{currentUser?.name?.[0] || 'У'}</AvatarFallback>
+                </Avatar>
+                <Button variant="ghost" size="sm" onClick={handleLogout}>
+                  <Icon name="LogOut" size={16} />
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -82,10 +284,10 @@ const Index = () => {
             <Card className="bg-white/90 backdrop-blur-sm shadow-lg">
               <CardHeader className="text-center">
                 <Avatar className="mx-auto mb-4 w-20 h-20">
-                  <AvatarImage src="/img/a34c9c60-b1fd-40fb-9711-2a46ec701434.jpg" />
-                  <AvatarFallback>ВЫ</AvatarFallback>
+                  <AvatarImage src={currentUser?.avatar} />
+                  <AvatarFallback>{currentUser?.name?.[0] || 'У'}</AvatarFallback>
                 </Avatar>
-                <h3 className="font-semibold text-lg">Ваш профиль</h3>
+                <h3 className="font-semibold text-lg">{currentUser?.name || 'Ваш профиль'}</h3>
                 <p className="text-sm text-muted-foreground">Житель Горхона</p>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -133,7 +335,7 @@ const Index = () => {
                     onClick={() => setActiveTab('reels')}
                   >
                     <Icon name="Play" size={18} className="mr-2" />
-                    Рилс
+                    Reels
                   </Button>
                 </nav>
               </CardContent>
@@ -149,8 +351,8 @@ const Index = () => {
                   <CardContent className="p-6">
                     <div className="flex space-x-4">
                       <Avatar>
-                        <AvatarImage src="/img/a34c9c60-b1fd-40fb-9711-2a46ec701434.jpg" />
-                        <AvatarFallback>ВЫ</AvatarFallback>
+                        <AvatarImage src={currentUser?.avatar} />
+                        <AvatarFallback>{currentUser?.name?.[0] || 'У'}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1 space-y-3">
                         <Textarea 
@@ -170,7 +372,11 @@ const Index = () => {
                               Место
                             </Button>
                           </div>
-                          <Button className="bg-gradient-to-r from-coral to-turquoise text-white">
+                          <Button 
+                            className="bg-gradient-to-r from-coral to-turquoise text-white"
+                            onClick={handleCreatePost}
+                            disabled={!newPost.trim()}
+                          >
                             Опубликовать
                           </Button>
                         </div>
@@ -180,7 +386,7 @@ const Index = () => {
                 </Card>
 
                 {/* Посты */}
-                {posts.map((post) => (
+                {postsData.map((post) => (
                   <Card key={post.id} className="bg-white/90 backdrop-blur-sm shadow-lg">
                     <CardContent className="p-6">
                       <div className="flex items-center space-x-3 mb-4">
@@ -201,8 +407,13 @@ const Index = () => {
                       />
                       <div className="flex items-center justify-between">
                         <div className="flex space-x-4">
-                          <Button variant="ghost" size="sm" className="text-coral hover:text-coral/80">
-                            <Icon name="Heart" size={18} className="mr-1" />
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className={post.liked ? "text-red-500 hover:text-red-600" : "text-coral hover:text-coral/80"}
+                            onClick={() => handleLike(post.id)}
+                          >
+                            <Icon name="Heart" size={18} className={`mr-1 ${post.liked ? 'fill-current' : ''}`} />
                             {post.likes}
                           </Button>
                           <Button variant="ghost" size="sm">
@@ -254,15 +465,32 @@ const Index = () => {
             {activeTab === 'reels' && (
               <Card className="bg-white/90 backdrop-blur-sm shadow-lg">
                 <CardHeader>
-                  <h3 className="text-xl font-semibold">Рилс Горхона</h3>
+                  <h3 className="text-xl font-semibold">Reels Горхона</h3>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-center py-12">
-                    <Icon name="Play" size={48} className="mx-auto text-muted-foreground mb-4" />
-                    <h4 className="text-lg font-semibold mb-2">Скоро здесь появятся рилс!</h4>
-                    <p className="text-muted-foreground">
-                      Жители Горхона смогут делиться короткими видео о жизни поселка
-                    </p>
+                  <div className="space-y-4">
+                    <div className="bg-black rounded-lg aspect-[9/16] max-w-xs mx-auto relative overflow-hidden">
+                      <img 
+                        src="/img/fc06f7ea-92cf-4e5f-8641-5230751df945.jpg" 
+                        alt="Reels" 
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                        <Button size="lg" className="rounded-full bg-white/20 hover:bg-white/30">
+                          <Icon name="Play" size={32} className="text-white" />
+                        </Button>
+                      </div>
+                      <div className="absolute bottom-4 left-4 right-4 text-white">
+                        <p className="text-sm font-medium">Семейный пикник в Горхоне</p>
+                        <p className="text-xs opacity-80">@михаил_сидоров</p>
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <Button className="bg-gradient-to-r from-coral to-turquoise text-white">
+                        <Icon name="Plus" size={18} className="mr-2" />
+                        Создать Reels
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
