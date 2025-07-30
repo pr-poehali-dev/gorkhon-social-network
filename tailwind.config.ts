@@ -61,6 +61,17 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// ГорхонNet цвета
+				coral: '#FF6B6B',
+				turquoise: '#4ECDC4',
+				lavender: '#DDA0DD',
+				navy: '#2C3E50',
+				yellow: '#FECDC4',
+				gradient: {
+					coral: '#FF6B6B',
+					turquoise: '#4ECDC4',
+					lavender: '#DDA0DD'
 				}
 			},
 			borderRadius: {
