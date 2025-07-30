@@ -95,7 +95,11 @@ const UserProfile: React.FC<UserProfileProps> = ({
                   {currentUser?.nickname || currentUser?.name || 'Пользователь'}
                 </p>
                 {currentUser?.verified && (
-                  <Icon name="CheckCircle" size={14} className="text-blue-500 flex-shrink-0" />
+                  <img 
+                    src="https://cdn.poehali.dev/files/f9a889a9-0bb8-4046-94e8-6e92e9f09742.png" 
+                    alt="Verified" 
+                    className="w-4 h-4 flex-shrink-0"
+                  />
                 )}
               </div>
               <p className="text-xs text-gray-500 truncate">{currentUser?.email}</p>

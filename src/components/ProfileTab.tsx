@@ -46,7 +46,11 @@ const ProfileTab: React.FC<ProfileTabProps> = ({
                   {currentUser?.nickname || currentUser?.name || 'username'}
                 </h1>
                 {currentUser?.verified && (
-                  <Icon name="CheckCircle" size={20} className="text-blue-500" />
+                  <img 
+                    src="https://cdn.poehali.dev/files/f9a889a9-0bb8-4046-94e8-6e92e9f09742.png" 
+                    alt="Verified" 
+                    className="w-5 h-5"
+                  />
                 )}
               </div>
               <Button 

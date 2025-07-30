@@ -230,13 +230,13 @@ const Index = () => {
 
           {activeTab === 'messages' && (
             <div className="max-w-2xl mx-auto">
-              <MessagesTab messages={messages} />
+              <MessagesTab messages={messages} currentUser={currentUser} />
             </div>
           )}
 
           {activeTab === 'reels' && (
             <div className="max-w-2xl mx-auto">
-              <ReelsTab />
+              <ReelsTab currentUser={currentUser} />
             </div>
           )}
 
